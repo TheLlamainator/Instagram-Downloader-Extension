@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Instagram Post Downloader</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      width: 380px;
+      min-height: 200px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: #fff;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+      padding: 20px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .header::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
+      animation: shimmer 3s infinite;
+    }
+
+    @keyframes shimmer {
+      0%, 100% { transform: translateX(-50%) translateY(-50%) rotate(0deg); }
+      50% { transform: translateX(-30%) translateY(-30%) rotate(180deg); }
+    }
+
+    .header-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .header .logo {
+      font-size: 36px;
+      margin-bottom: 8px;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+    }
+
+    .header h1 {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+
+    .header .subtitle {
+      font-size: 12px;
+      opacity: 0.9;
+      margin-top: 4px;
+      font-weight: 400;
+    }
+
+    .content {
+      padding: 20px;
+    }
+
+    .status {
+      text-align: center;
+      padding: 30px 20px;
+      color: rgba(255,255,255,0.7);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .status.error {
+      color: #ff6b6b;
+    }
+
+    .status-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
+
+    .media-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .media-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.1);
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+    }
+
+    .media-item:hover {
+      background: rgba(255,255,255,0.1);
+      border-color: rgba(255,255,255,0.2);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    }
+
+    .media-preview-container {
+      position: relative;
+      width: 72px;
+      height: 72px;
+      flex-shrink: 0;
+    }
+
+    .media-preview {
+      width: 72px;
+      height: 72px;
+      object-fit: cover;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.1);
+    }
+
+    .media-type-badge {
+      position: absolute;
+      bottom: -4px;
+      right: -4px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 4px 8px;
+      border-radius: 8px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+    }
+
+    .media-type-badge.video {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      box-shadow: 0 2px 8px rgba(245, 87, 108, 0.4);
+    }
+
+    .media-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .media-index {
+      font-size: 15px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+
+    .media-size {
+      font-size: 12px;
+      color: rgba(255,255,255,0.5);
+    }
+
+    .download-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .download-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .download-btn:active {
+      transform: scale(0.98);
+    }
+
+    .download-btn.downloaded {
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+      box-shadow: 0 4px 15px rgba(56, 239, 125, 0.3);
+    }
+
+    .download-btn.warning {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
+    }
+
+    .loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      gap: 16px;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(255,255,255,0.1);
+      border-top-color: #667eea;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    .loading-text {
+      color: rgba(255,255,255,0.7);
+      font-size: 14px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .download-all {
+      margin-top: 16px;
+      width: 100%;
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+      color: white;
+      border: none;
+      border-radius: 14px;
+      padding: 14px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 20px rgba(56, 239, 125, 0.3);
+    }
+
+    .download-all:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 25px rgba(56, 239, 125, 0.4);
+    }
+
+    .download-all:active {
+      transform: translateY(0);
+    }
+
+    .footer {
+      text-align: center;
+      padding: 12px 20px 16px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.3);
+      border-top: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .media-count {
+      background: rgba(255,255,255,0.1);
+      padding: 8px 16px;
+      border-radius: 20px;
+      margin-bottom: 16px;
+      text-align: center;
+      font-size: 13px;
+      color: rgba(255,255,255,0.8);
+    }
+
+    .media-count strong {
+      color: #38ef7d;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-content">
+      <div class="logo">📸</div>
+      <h1>IGDown</h1>
+      <div class="subtitle">Instagram Media Downloader</div>
+    </div>
+  </div>
+  
+  <div class="content">
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <div class="loading-text">Scanning for media...</div>
+    </div>
+    
+    <div class="status" id="status" style="display: none;">
+      <div class="status-icon">🔍</div>
+      <div class="status-text"></div>
+    </div>
+    
+    <div class="media-count" id="mediaCount" style="display: none;">
+      Found <strong id="countNum">0</strong> media item(s)
+    </div>
+    
+    <div class="media-list" id="mediaList" style="display: none;"></div>
+    
+    <button class="download-all" id="downloadAll" style="display: none;">
+      <span>⬇️</span> Download All
+    </button>
+  </div>
+
+  <div class="footer">
+    IGDown • v1.0
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
